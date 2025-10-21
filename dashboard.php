@@ -3,25 +3,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/css/dashboard.css">
+
     <script src= "https://kit.fontawesome.com/3c108498cb.js" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="#">
+
 </head>
 <body>
 
-    <div class ="row">
-        <div class="col-sm-9">
-            Level 1: col-sm-9
-            <div class ="row">
-                <div class="col-xs-8 col-sm-6">
-                    Level 2: col-xs-8 .col-sm-6
-                </div>
-                <div class="col-xs-4 col-sm-6">
-                    Level 2: col-xs-4 col-sm-6
-                </div>
-            </div>
-        </div>
-    </div>
+    <h1>This is an awesome Dashboard</h1>
+    <a href="/kitchenpantry/profile.php">Back to profile</a>
+   
     
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
