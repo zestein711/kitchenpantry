@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forgot Password</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/css/login.css">
+    <link rel="stylesheet" href="../login.css">
     <script src= "https://kit.fontawesome.com/3c108498cb.js" crossorigin="anonymous"></script>
 </head>
 <body>
@@ -15,7 +15,7 @@
             <h2>Forgot Password</h2>
           <input type="email" class="form-control mb-3" placeholder="Email" required />
           <button type="submit">Send Email</button>
-          <p class="mt-3"><a href="/html/login.html">Go Back</a></p>
+          <p class="mt-3"><a href="/kitchenpantry/">Go Back</a></p>
         </form>
       </div>
 
@@ -38,6 +38,6 @@
     
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/forgotPassword.js"></script>
+    <script src="/kitchenpantry/forgotPassword.js"></script>
 </body>
 </html>
