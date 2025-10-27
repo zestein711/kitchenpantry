@@ -20,9 +20,9 @@
 <body>
     <!-- Header -->
     <div class="header">
-        <a href="dashboard.php"><h2>Kitchen Pantry</h2></a>
+        <a href="dashboard.html"><h2>Kitchen Pantry</h2></a>
         <div class="icons">
-            <i class="fa-solid fa-user" id="profile-btn"></i>
+            <a href="profile.html"> <i class="fa-solid fa-user" id="profile-btn"></i></a>
             <i class="fa-solid fa-gear" id="settings-btn"></i>
         </div>
     </div>
@@ -34,7 +34,7 @@
                 <!-- Image -->
                  <div class="food-image mb-3">
                     Image of Food
-                    <button class="save-btn">⭐</button>
+                    <i class="fa-solid fa-star"></i>
                  </div>
 
                  <!-- Ingredients -->
@@ -82,4 +82,3 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
