@@ -13,4 +13,21 @@ document.getElementById('search-btn').addEventListener('click', () => {
     const searchTerm = document.getElementById('search-input').value;
     alert(`Searching for: ${searchTerm}`);
     // Add logic to filter shelves or fetch data
+
 });
+
+  const selectedIngredients = new Set();
+
+  // Make items clickable
+  document.querySelectorAll('.food-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const ingredient = item.dataset.ingredient;
+      if (selectedIngredients.has(ingredient)) {
+        selectedIngredients.delete(ingredient);
+        item.classList.remove('selected');
+      } else {
+        selectedIngredients.add(ingredient);
+        item.classList.add('selected');
+      }
+    });
+  });
