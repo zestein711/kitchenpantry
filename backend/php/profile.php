@@ -13,7 +13,7 @@
     <script src= "https://kit.fontawesome.com/3c108498cb.js" crossorigin="anonymous"></script>
 
     <!-- Custom CSS "profile.css" -->
-    <link rel="stylesheet" href="frontend/css/profile.css"/>
+    <link rel="stylesheet" href="/frontend/css/profile.css"/>
 
 </head>
 
