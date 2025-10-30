@@ -111,9 +111,9 @@
 <body>
     <!-- Header -->
     <div class="header">
-       <a href="dashboard.html"> <h2>Kitchen Pantry</h2></a>
+       <a href="dashboard.php"> <h2>Kitchen Pantry</h2></a>
         <div class="icons">
-            <a href="profile.html"><i class="fa-solid fa-user" id="profile-btn"></i></a>
+            <a href="profile.php"><i class="fa-solid fa-user" id="profile-btn"></i></a>
             <i class="fa-solid fa-gear" id="settings-btn"></i>
         </div>
     </div>
