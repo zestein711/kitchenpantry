@@ -13,7 +13,7 @@
     <script src= "https://kit.fontawesome.com/3c108498cb.js" crossorigin="anonymous"></script>
 
     <!-- Custom CSS "profile.css" -->
-    <link rel="stylesheet" href="../profile.css"/>
+    <link rel="stylesheet" href="frontend/css/recipe.css"/>
 
 </head>
 
@@ -26,7 +26,7 @@
              <header class="profile-header position-relative text-center text-white">
                 <div class="d-flex justify-content-between align items-center px-3 pt-3">
                     <!-- Back Arrow to dashboard-->
-                    <a href="/kitchenpantry/dashboard.php"><i class="fa-solid fa-arrow-left fs-5"></i></a>
+                    <a href="backend/php/dashboard.php"><i class="fa-solid fa-arrow-left fs-5"></i></a>
                     <h2 class="fs-5 fw-semibold mb-0">Profile</h2>
                     <!-- Profile Settings Icon -->
                     <i class="fa-solid fa-gear fs-5"></i>
