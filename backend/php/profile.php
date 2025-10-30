@@ -13,11 +13,7 @@
     <script src= "https://kit.fontawesome.com/3c108498cb.js" crossorigin="anonymous"></script>
 
     <!-- Custom CSS "profile.css" -->
-<<<<<<< HEAD
-    <link rel="stylesheet" href="frontend/css/recipe.css"/>
-=======
     <link rel="stylesheet" href="frontend/css/profile.css"/>
->>>>>>> edf81a3 (Test)
 
 </head>
 
