@@ -4,5 +4,5 @@ document.getElementById("loginForm").addEventListener("submit", function(e){
     //exists, the login button just sends you to your personal dashboard
 
     
-    window.location.href = "/kitchenpantry/dashboard.php";
+    window.location.href = "../../backend/php/dashboard.php";
 });

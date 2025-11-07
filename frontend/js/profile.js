@@ -28,7 +28,7 @@ recipeGrid.addEventListener("click", (e) => {
   
     // Navigate to recipe
     const recipeId = box.dataset.recipeId;
-    window.location.href = "/html/recipe.html";
+    window.location.href = "../../backend/php/recipe.php";
   });
 
 //When user triggers the event

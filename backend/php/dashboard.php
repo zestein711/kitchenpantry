@@ -123,7 +123,7 @@
         <label>My Virtual Kitchen</label>
         <div class="input-group">
             <input type="text" class="form-control" placeholder="Search" aria-label="Search" id="search-input">
-            <a href="recipeSearch.html"><button class="btn btn-outline-secondary" type="button" id="search-btn"><i class="fa-solid fa-search"></i></button></a>
+            <a href="../../backend/php/recipeSearch.php"><button class="btn btn-outline-secondary" type="button" id="search-btn"><i class="fa-solid fa-search"></i></button></a>
         </div>
     </div>
 
@@ -176,6 +176,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/dashboard.js"></script>
+    <script src="../../frontend/js/dashboard.js"></script>
 </body>
 </html>

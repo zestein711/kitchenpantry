@@ -11,5 +11,5 @@ document.querySelector("form").addEventListener("submit", function(e){
         return; //Stop
     }
 
-    window.location.href = "/html/login.html";
+    window.location.href = "../../backend/php/login.php";
 });

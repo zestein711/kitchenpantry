@@ -13,7 +13,7 @@
     <script src= "https://kit.fontawesome.com/3c108498cb.js" crossorigin="anonymous"></script>
 
     <!-- Custom CSS "profile.css" -->
-    <link rel="stylesheet" href="/frontend/css/profile.css"/>
+    <link rel="stylesheet" href="../../frontend/css/profile.css"/>
 
 </head>
 
@@ -26,7 +26,7 @@
              <header class="profile-header position-relative text-center text-white">
                 <div class="d-flex justify-content-between align items-center px-3 pt-3">
                     <!-- Back Arrow to dashboard-->
-                    <a href="backend/php/dashboard.php"><i class="fa-solid fa-arrow-left fs-5"></i></a>
+                    <a href="../../backend/php/dashboard.php"><i class="fa-solid fa-arrow-left fs-5"></i></a>
                     <h2 class="fs-5 fw-semibold mb-0">Profile</h2>
                     <!-- Profile Settings Icon -->
                     <i class="fa-solid fa-gear fs-5"></i>
@@ -65,7 +65,7 @@
                     <div class="review p-3 rounded-3 mb-3 bg-body-tertiary">
                         <p class="mb-1 small">Example of a review</p>
                         <!--Link to the recipe-->
-                        <a href="/kitchenpantry/recipe.html" class="small text-decoration-none text-primary">Go to Recipe</a>
+                        <a href="../../backend/php/recipe.php" class="small text-decoration-none text-primary">Go to Recipe</a>
                     </div>
                </section>
             </div>
@@ -75,6 +75,6 @@
     <!-- Boostrap JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/kitchenpantry/profile.js"></script>
+    <script src="../../frontend/js/profile.js"></script>
 </body>
 </html>

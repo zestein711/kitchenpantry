@@ -13,5 +13,5 @@ document.querySelector("form").addEventListener("submit", function(e){
 
     alert("Password successfully changed!")
 
-    window.location.href = "/html/login.html";
+    window.location.href = "../../backend/php/login.php";
 });

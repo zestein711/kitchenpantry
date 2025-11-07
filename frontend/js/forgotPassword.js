@@ -16,5 +16,5 @@ document.getElementById("verifyBtn").addEventListener("click",function(){
 
     // console.log("Verifying code:", code);
 
-    window.location.href = "/html/resetPassword.html";
+    window.location.href = "../../backend/php/resetPassword.php";
 });
