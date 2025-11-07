@@ -26,7 +26,7 @@
              <header class="profile-header position-relative text-center text-white">
                 <div class="d-flex justify-content-between align items-center px-3 pt-3">
                     <!-- Back Arrow to dashboard-->
-                    <a href="backend/php/dashboard.php"><i class="fa-solid fa-arrow-left fs-5"></i></a>
+                    <a href="/backend/php/dashboard.php"><i class="fa-solid fa-arrow-left fs-5"></i></a>
                     <h2 class="fs-5 fw-semibold mb-0">Profile</h2>
                     <!-- Profile Settings Icon -->
                     <i class="fa-solid fa-gear fs-5"></i>
@@ -75,6 +75,6 @@
     <!-- Boostrap JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/kitchenpantry/profile.js"></script>
+    <script src="/frontend/js/profile.js"></script>
 </body>
 </html>
