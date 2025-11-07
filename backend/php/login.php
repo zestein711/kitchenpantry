@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="../login.css">
+    <link rel="stylesheet" href="../../frontend/css/login.css">
     <script src= "https://kit.fontawesome.com/3c108498cb.js" crossorigin="anonymous"></script>
 </head>
 <body>
@@ -16,8 +16,8 @@
           <input type="text" placeholder="Username" required />
           <input type="password" placeholder="Password" required />
             <button type="submit">Login</button>
-          <p><a href="/kitchenpantry/forgotPassword.html">Forgot Password?</a></p>
-          <p><a href="/kitchenpantry/createAccount.html">Create Account</a></p>
+          <p><a href="../../backend/php/forgotPassword.php">Forgot Password?</a></p>
+          <p><a href="../../backend/php/createAccount.php">Create Account</a></p>
     </form>
       
   </div>

@@ -65,7 +65,7 @@
                     <div class="review p-3 rounded-3 mb-3 bg-body-tertiary">
                         <p class="mb-1 small">Example of a review</p>
                         <!--Link to the recipe-->
-                        <a href="/kitchenpantry/recipe.html" class="small text-decoration-none text-primary">Go to Recipe</a>
+                        <a href="../../backend/php/recipe.php" class="small text-decoration-none text-primary">Go to Recipe</a>
                     </div>
                </section>
             </div>
