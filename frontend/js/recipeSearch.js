@@ -1,6 +1,6 @@
 document.querySelectorAll('.recipe-card').forEach(card => {
     card.addEventListener('click', () => {
-      window.location.href = 'recipe.html';
+      window.location.href = '../../backend/php/recipe.js';
     });
   });
   
