@@ -21,6 +21,13 @@ try {
      throw new \PDOException($e->getMessage(), (int)$e->getCode());
 }
 
+//NEED THESE TO SEND EMAIL
+//If email is changed, you need to generate a new Password 
+//(must be gmail)
+define("SMTP_USER", "kitchenpantry391@gmail.com");
+define("SMTP_PASS", "zcgihkaypvfybdoa");
+
+
 // IMPORTANT: Do NOT have any "echo" statements in this file.
 // An "echo" here will break the header() redirect in your register file.
 ?>

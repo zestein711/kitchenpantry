@@ -1,0 +1,98 @@
+<?php
+require __DIR__ . '/../src/config.php';
+
+$errors = [];
+$success = "";
+$token = $_GET['token'] ?? "";
+
+// 1. Verify token exists
+if (!$token) {
+    die("Invalid reset link.");
+}
+
+// 2. Look up token in database
+$stmt = $pdo->prepare("
+    SELECT pr.user_id, pr.expires_at, u.username 
+    FROM password_resets pr
+    JOIN users u ON pr.user_id = u.id
+    WHERE pr.token = ?
+    LIMIT 1
+");
+$stmt->execute([$token]);
+$reset = $stmt->fetch();
+
+if (!$reset) {
+    die("Invalid or expired reset link.");
+}
+
+// 3. Check expiration
+if (strtotime($reset['expires_at']) < time()) {
+    die("This reset link has expired.");
+}
+
+// If user submits new password
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $password = $_POST['password'] ?? "";
+    $confirm = $_POST['confirm'] ?? "";
+
+    if (strlen($password) < 6) {
+        $errors[] = "Password must be at least 6 characters.";
+    }
+    if ($password !== $confirm) {
+        $errors[] = "Passwords do not match.";
+    }
+
+    if (empty($errors)) {
+        // 4. Hash the password
+        $hashed = password_hash($password, PASSWORD_DEFAULT);
+
+        // 5. Update user password
+        $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+        $stmt->execute([$hashed, $reset['user_id']]);
+
+        // 6. Delete token so it can't be used twice
+        $pdo->prepare("DELETE FROM password_resets WHERE token = ?")
+            ->execute([$token]);
+
+        $success = "Your password has been reset successfully! 
+                    <a href='index.php'>Login here</a>";
+    }
+}
+
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reset Password</title>
+    <link rel="stylesheet" href="style/forms.css">
+    <link rel="stylesheet" href="style/global.css">
+</head>
+<body>
+
+<h1>Reset Password</h1>
+
+<?php 
+foreach ($errors as $err) {
+    echo "<p style='color:red;'>$err</p>";
+}
+
+if ($success) {
+    echo "<p style='color:green;'>$success</p>";
+} else {
+?>
+<form method="POST">
+    <label>New Password:
+        <input type="password" name="password" required>
+    </label><br>
+
+    <label>Confirm Password:
+        <input type="password" name="confirm" required>
+    </label><br>
+
+    <button type="submit">Reset Password</button>
+</form>
+<?php } ?>
+
+</body>
+</html>
