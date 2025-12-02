@@ -54,8 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->prepare("DELETE FROM password_resets WHERE token = ?")
             ->execute([$token]);
 
-        $success = "Your password has been reset successfully! 
-                    <a href='index.php'>Login here</a>";
+        $success = "Your password has been reset successfully! <br><a href='login.php'>Login here</a>";
     }
 }
 
@@ -63,36 +62,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Reset Password</title>
-    <link rel="stylesheet" href="style/forms.css">
     <link rel="stylesheet" href="style/global.css">
 </head>
-<body>
 
-<h1>Reset Password</h1>
+<body style="display:flex; align-items:center; justify-content:center; height:100vh;">
 
-<?php 
-foreach ($errors as $err) {
-    echo "<p style='color:red;'>$err</p>";
-}
+    <div class="card-container" style="width:100%; max-width:400px; margin:0;">
+        <h2 style="text-align:center;">Reset Password</h2>
 
-if ($success) {
-    echo "<p style='color:green;'>$success</p>";
-} else {
-?>
-<form method="POST">
-    <label>New Password:
-        <input type="password" name="password" required>
-    </label><br>
+        <?php
+        foreach ($errors as $err) {
+            echo "<p class='error-msg'>$err</p>";
+        }
 
-    <label>Confirm Password:
-        <input type="password" name="confirm" required>
-    </label><br>
+        if ($success) {
+            echo "<p style='color:green; background:rgba(40, 167, 69, 0.1); padding:10px; border-radius:5px; text-align:center;'>$success</p>";
+        } else {
+            ?>
+            <form method="POST">
+                <label style="font-weight:bold; margin-bottom:5px; display:block;">New Password:</label>
+                <input type="password" name="password" required>
 
-    <button type="submit">Reset Password</button>
-</form>
-<?php } ?>
+                <label style="font-weight:bold; margin-bottom:5px; display:block;">Confirm Password:</label>
+                <input type="password" name="confirm" required>
+
+                <button type="submit" class="btn-primary" style="margin-top:10px;">Reset Password</button>
+            </form>
+        <?php } ?>
+    </div>
 
 </body>
+
 </html>

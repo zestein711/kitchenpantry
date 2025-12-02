@@ -1,0 +1,102 @@
+:root {
+    --bg-color: #f4f6f8;
+    --card-bg: #ffffff;
+    --text-color: #333333;
+    --text-muted: #666666;
+    --border-color: #dddddd;
+    --primary-color: #007bff;
+    --header-bg: #ffffff;
+    --input-bg: #ffffff;
+    --input-border: #cccccc;
+}
+
+/* DARK MODE OVERRIDES */
+body.dark-mode {
+    --bg-color: #121212;
+    --card-bg: #1e1e1e;
+    --text-color: #e0e0e0;
+    --text-muted: #aaaaaa;
+    --border-color: #333333;
+    --primary-color: #4da3ff;
+    --header-bg: #1e1e1e;
+    --input-bg: #2d2d2d;
+    --input-border: #444444;
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* --- SHARED HEADER STYLES --- */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: var(--header-bg);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: var(--text-muted);
+    margin: 0 1rem;
+    font-weight: 500;
+}
+.nav-links a:hover { color: var(--primary-color); }
+.nav-links a.active { color: var(--primary-color); font-weight: 700; }
+
+.profile-menu { display: flex; align-items: center; gap: 15px; }
+
+/* --- SHARED BUTTONS --- */
+.btn-primary {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1rem;
+}
+.btn-primary:hover { background-color: #218838; }
+
+.button-logout {
+    text-decoration: none;
+    color: #d9534f;
+    border: 1px solid #d9534f;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+.button-logout:hover { background-color: #d9534f; color: white; }
+
+/* --- SHARED CARDS --- */
+.card-container {
+    background: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 2rem;
+    margin: 2rem auto;
+    max-width: 800px;
+    border: 1px solid var(--border-color);
+}
+
+/* --- FORMS --- */
+input[type="text"], input[type="email"], input[type="password"], textarea, select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-color);
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+a { color: var(--primary-color); text-decoration: none; }

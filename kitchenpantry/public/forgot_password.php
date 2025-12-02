@@ -37,7 +37,8 @@ $username = "";
 $email = "";
 
 // Determine mode (username or email)
-$mode = $_POST['mode'] ?? 'username';
+// We check $_REQUEST to handle both GET (from link) and POST (from form)
+$mode = $_REQUEST['mode'] ?? 'username';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
@@ -45,195 +46,176 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
        MODE: USERNAME
     ----------------------------------------------------------- */
     if ($mode === 'username') {
-
         $username = trim($_POST['username'] ?? '');
 
-        if (strlen($username) < 3) {
-            $errors[] = "Please enter a valid username.";
+        if (empty($username)) {
+            $errors[] = "Please enter your username.";
         } else {
-
+            // Find user by username
             $stmt = $pdo->prepare("SELECT id, email FROM users WHERE username = ?");
             $stmt->execute([$username]);
             $user = $stmt->fetch();
 
-            if (!$user) {
-                $errors[] = "No account found with that username.";
-            } else {
-
-                // Generate reset token
+            if ($user && !empty($user['email'])) {
+                // Send reset link to $user['email']
                 $token = bin2hex(random_bytes(32));
-                $expires = date("Y-m-d H:i:s", time() + 3600);
+                $expires_at = date("Y-m-d H:i:s", strtotime('+1 hour'));
 
-                $stmt = $pdo->prepare("
-                    INSERT INTO password_resets (user_id, token, expires_at)
-                    VALUES (?, ?, ?)
-                ");
-                $stmt->execute([$user['id'], $token, $expires]);
+                $stmt = $pdo->prepare("INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)");
+                $stmt->execute([$user['id'], $token, $expires_at]);
 
-                // Build reset link
-                $resetLink = "https://localhost/kitchenpantry/public/reset_password.php?token={$token}";
+                // Adjust this URL to match your actual server path!
+                $resetLink = "http://localhost/kitchenpantry/public/reset_password.php?token=" . $token;
 
-                $subject = "Password Reset Request (Forward to User)";
-                $message = "A password reset was requested.\n\n"
-                    . "User Email: {$user['email']}\n"
-                    . "Username: {$username}\n\n"
-                    . "Reset Link (send this to the user):\n{$resetLink}\n\n"
-                    . "Requested at: " . date("Y-m-d H:i:s");
-
-                // Send email
+                // Send Email via PHPMailer
                 $mail = new PHPMailer(true);
-
                 try {
+                    // Server settings
                     $mail->isSMTP();
                     $mail->Host = 'smtp.gmail.com';
                     $mail->SMTPAuth = true;
-                    $mail->Username = SMTP_USER;
-                    $mail->Password = SMTP_PASS;
+                    $mail->Username = 'kitchenpantryapp@gmail.com';
+                    $mail->Password = 'dhoc uqdf ojhq bnaq';
                     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                     $mail->Port = 587;
 
-                    $mail->setFrom(SMTP_USER, 'Kitchen Pantry System');
-                    $mail->addAddress("zojosb@gmail.com");
-                    $mail->isHTML(false);
-                    $mail->Subject = $subject;
-                    $mail->Body = $message;
+                    // Recipients
+                    $mail->setFrom('kitchenpantryapp@gmail.com', 'Kitchen Pantry');
+                    $mail->addAddress($user['email']);
+
+                    // Content
+                    $mail->isHTML(true);
+                    $mail->Subject = 'Password Reset Request';
+                    $mail->Body = "Click this link to reset your password: <a href='$resetLink'>$resetLink</a>";
+
                     $mail->send();
-
-                    $success = "A reset request has been logged. The admin will forward the reset link.";
-
+                    $success = "Reset link sent to the email associated with username: " . htmlspecialchars($username);
                 } catch (Exception $e) {
-                    $errors[] = "Mailer Error: " . $mail->ErrorInfo;
+                    $errors[] = "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
                 }
+            } else {
+                $errors[] = "Username not found or no email associated.";
             }
         }
     }
 
     /* -----------------------------------------------------------
        MODE: EMAIL
-    ----------------------------------------------------------- */
-    if ($mode === 'email') {
-
+    ----------------------------------------------------------- */ elseif ($mode === 'email') {
         $email = trim($_POST['email'] ?? '');
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors[] = "Please enter a valid email.";
+        if (empty($email)) {
+            $errors[] = "Please enter your email.";
         } else {
-
-            $stmt = $pdo->prepare("SELECT id, username, email FROM users WHERE email = ?");
+            // Find user by email
+            $stmt = $pdo->prepare("SELECT id, email FROM users WHERE email = ?");
             $stmt->execute([$email]);
             $user = $stmt->fetch();
 
-            if (!$user) {
-                $errors[] = "No account found with that email.";
-            } else {
-
-                // Create token
+            if ($user) {
+                // Send reset link
                 $token = bin2hex(random_bytes(32));
-                $expires = date("Y-m-d H:i:s", time() + 3600);
+                $expires_at = date("Y-m-d H:i:s", strtotime('+1 hour'));
 
-                $stmt = $pdo->prepare("
-                    INSERT INTO password_resets (user_id, token, expires_at)
-                    VALUES (?, ?, ?)
-                ");
-                $stmt->execute([$user['id'], $token, $expires]);
+                $stmt = $pdo->prepare("INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)");
+                $stmt->execute([$user['id'], $token, $expires_at]);
 
-                // Reset link
-                $resetLink = "https://localhost/kitchenpantry/public/reset_password.php?token={$token}";
+                $resetLink = "http://localhost/kitchenpantry/public/reset_password.php?token=" . $token;
 
-                $subject = "Password Reset Request (Forward to User)";
-                $message = "A password reset was requested.\n\n"
-                    . "User Email: {$user['email']}\n"
-                    . "Username: {$user['username']}\n\n"
-                    . "Reset Link (send this to the user):\n{$resetLink}\n\n"
-                    . "Requested at: " . date("Y-m-d H:i:s");
-
-                // Email admin
+                // Send Email via PHPMailer
                 $mail = new PHPMailer(true);
-
                 try {
+                    // Server settings
                     $mail->isSMTP();
                     $mail->Host = 'smtp.gmail.com';
                     $mail->SMTPAuth = true;
-                    $mail->Username = SMTP_USER;
-                    $mail->Password = SMTP_PASS;
+                    $mail->Username = 'kitchenpantryapp@gmail.com';
+                    $mail->Password = 'dhoc uqdf ojhq bnaq';
                     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                     $mail->Port = 587;
 
-                    $mail->setFrom(SMTP_USER, 'Kitchen Pantry System');
-                    $mail->addAddress("zojosb@gmail.com");
-                    $mail->isHTML(false);
-                    $mail->Subject = $subject;
-                    $mail->Body = $message;
+                    // Recipients
+                    $mail->setFrom('kitchenpantryapp@gmail.com', 'Kitchen Pantry');
+                    $mail->addAddress($email);
+
+                    // Content
+                    $mail->isHTML(true);
+                    $mail->Subject = 'Password Reset Request';
+                    $mail->Body = "Click this link to reset your password: <a href='$resetLink'>$resetLink</a>";
+
                     $mail->send();
-
-                    $success = "A reset request has been logged. The admin will forward the reset link.";
-
+                    $success = "Reset link sent to: " . htmlspecialchars($email);
                 } catch (Exception $e) {
-                    $errors[] = "Mailer Error: " . $mail->ErrorInfo;
+                    $errors[] = "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
                 }
+            } else {
+                $errors[] = "No account found with that email.";
             }
         }
     }
 }
-
 ?>
 
 <!DOCTYPE html>
 <html>
+
 <head>
-    <link rel="stylesheet" href="style/global.css">
-    <link rel="stylesheet" href="style/forms.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <title>Forgot Password</title>
+    <link rel="stylesheet" href="style/global.css">
 </head>
-<body>
 
-<?php
-foreach ($errors as $err) {
-    echo "<p style='color:red;'>" . htmlspecialchars($err) . "</p>";
-}
-if ($success) {
-    echo "<p style='color:green;'>" . htmlspecialchars($success) . "</p>";
-}
-?>
+<body style="display:flex; align-items:center; justify-content:center; height:100vh;">
 
-<form method="POST">
-    <h1>Forgot Password</h1>
+    <div class="card-container" style="width:100%; max-width:400px; margin:0;">
+        <h2 style="text-align:center;">Forgot Password</h2>
 
-    <?php if ($mode === 'username'): ?>
-        <label>Username:
-            <input type="text" name="username" value="<?php echo htmlspecialchars($username); ?>">
-        </label><br>
+        <?php
+        foreach ($errors as $err) {
+            echo "<p class='error-msg'>" . htmlspecialchars($err) . "</p>";
+        }
+        if ($success) {
+            echo "<p style='color:green; background:rgba(40, 167, 69, 0.1); padding:10px; border-radius:5px;'>" . htmlspecialchars($success) . "</p>";
+        }
+        ?>
 
-        <input type="hidden" name="mode" value="username">
-        <button type="submit">Send Reset Link</button>
+        <form method="POST">
+            <?php if ($mode === 'username'): ?>
+                <label style="font-weight:bold; margin-bottom:5px; display:block;">Username</label>
+                <input type="text" name="username" placeholder="Enter Username"
+                    value="<?php echo htmlspecialchars($username); ?>">
 
-        <p style="text-align:center;">
-            Don't know your username?
-            <button type="submit" name="mode" value="email" style="border:none;background:none;color:blue;cursor:pointer;">
-                Use Email Instead
-            </button>
+                <input type="hidden" name="mode" value="username">
+                <button type="submit" class="btn-primary">Send Reset Link</button>
+
+                <div style="text-align:center; margin-top:20px; font-size:0.9rem;">
+                    <span style="color:var(--text-muted);">Don't know your username?</span><br>
+                    <a href="?mode=email" style="color:var(--accent-color); text-decoration:underline;">
+                        Use Email Instead
+                    </a>
+                </div>
+
+            <?php else: ?>
+                <label style="font-weight:bold; margin-bottom:5px; display:block;">Email</label>
+                <input type="email" name="email" placeholder="Enter Email Address"
+                    value="<?php echo htmlspecialchars($email); ?>">
+
+                <input type="hidden" name="mode" value="email">
+                <button type="submit" class="btn-primary">Send Reset Link</button>
+
+                <div style="text-align:center; margin-top:20px; font-size:0.9rem;">
+                    <span style="color:var(--text-muted);">Remember your username?</span><br>
+                    <a href="?mode=username" style="color:var(--accent-color); text-decoration:underline;">
+                        Use Username Instead
+                    </a>
+                </div>
+            <?php endif; ?>
+        </form>
+
+        <p style="text-align:center; margin-top:15px; border-top:1px solid var(--border-color); padding-top:15px;">
+            <a href="login.php" style="font-weight:bold;">Back to Login</a>
         </p>
-
-    <?php else: ?>
-        <label>Email:
-            <input type="email" name="email" value="<?php echo htmlspecialchars($email); ?>">
-        </label><br>
-
-        <input type="hidden" name="mode" value="email">
-        <button type="submit">Send Reset Link</button>
-
-        <p style="text-align:center;">
-            Remember your username?
-            <button type="submit" name="mode" value="username" style="border:none;background:none;color:blue;cursor:pointer;">
-                Use Username Instead
-            </button>
-        </p>
-    <?php endif; ?>
-
-    <p style="text-align:center;"><a href="index.php">Back to Login</a></p>
-</form>
+    </div>
 
 </body>
-</html>
 
+</html>

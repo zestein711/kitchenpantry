@@ -1,279 +1,269 @@
 <?php
-session_start(); // Always first
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+session_start();
+$path_subfolder = __DIR__ . '/../src/config.php';
+$path_root = __DIR__ . '/src/config.php';
+if (file_exists($path_subfolder)) {
+    require $path_subfolder;
+} elseif (file_exists($path_root)) {
+    require $path_root;
+}
 
-// Check if the user is logged in
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
 }
+$user_id = $_SESSION['user_id'];
+$first_name = $_SESSION['first_name'] ?? 'User';
 
-// Get user data from session
-$first_name = htmlspecialchars($_SESSION['first_name']);
-$user_id = $_SESSION['user_id']; // <-- We need this for the query
+// 1. Check Dark Mode
+$stmt = $pdo->prepare("SELECT dark_mode FROM users WHERE id = ?");
+$stmt->execute([$user_id]);
+$is_dark = $stmt->fetchColumn();
 
-// Connect to the database
-require __DIR__ . '/../src/config.php'; // Get the $pdo variable
-
-// ===============================================
-// === PART 1: GET SEARCH & SORT PARAMETERS
-// ===============================================
-
+// 2. Filters
 $search_term = htmlspecialchars(trim($_GET['search'] ?? ''));
 $sort_by = htmlspecialchars(trim($_GET['sort'] ?? 'popular'));
+$excluded_allergens = $_GET['exclude'] ?? [];
+$user_recipes_only = isset($_GET['user_recipes_only']);
 
-// ===============================================
-// === PART 2: BUILD THE SQL QUERY (UPGRADED)
-// ===============================================
-
-// This array will hold all the parameters for the query
-$params = [];
-
-// Start with the base query
-$sql = "
-    SELECT 
-        r.id, r.recipe_name, r.total_time, r.servings, r.rating, r.url, r.img_src,
-        -- This CASE statement creates a new 'is_favorite' column (0 or 1)
-        -- It's our magic toggle
-        CASE WHEN f.id IS NOT NULL THEN 1 ELSE 0 END AS is_favorite
-    FROM 
-        recipes AS r
-    LEFT JOIN 
-        favorite_recipes AS f 
-    ON 
-        r.id = f.recipe_id AND f.user_id = ? 
-";
-// Add the user_id as the FIRST parameter for the JOIN
-$params[] = $user_id;
-
-// This will hold our WHERE conditions
+$params = [$user_id];
 $where_clauses = [];
 
-// If the user is searching...
+// Base Query
+$sql = "
+    SELECT 
+        r.id, r.recipe_name, r.total_time, r.servings, r.rating, r.url, r.img_src, r.ingredients, r.user_id,
+        CASE WHEN f.id IS NOT NULL THEN 1 ELSE 0 END AS is_favorite
+    FROM recipes AS r
+    LEFT JOIN favorite_recipes AS f ON r.id = f.recipe_id AND f.user_id = ? 
+";
+
 if (!empty($search_term)) {
-    // ...add a WHERE clause
     $where_clauses[] = "r.recipe_name LIKE ?";
-    // Add the search term to our params
     $params[] = "%$search_term%";
 }
 
-// If we have any WHERE clauses, add them to the query
+if ($user_recipes_only) {
+    $where_clauses[] = "r.user_id IS NOT NULL";
+}
+
+// Allergen Logic
+if (!empty($excluded_allergens)) {
+    $map = [
+        'Dairy' => ['milk', 'cheese', 'butter', 'cream', 'yogurt', 'whey'],
+        'Eggs' => ['egg', 'mayonnaise', 'meringue'],
+        'Peanuts' => ['peanut', 'nut butter'],
+        'Tree Nuts' => ['almond', 'cashew', 'walnut', 'pecan', 'pistachio', 'hazelnut'],
+        'Soy' => ['soy', 'tofu', 'edamame', 'miso', 'tempeh'],
+        'Wheat' => ['wheat', 'flour', 'bread', 'pasta', 'barley', 'rye', 'gluten']
+    ];
+    foreach ($excluded_allergens as $allergen) {
+        if (isset($map[$allergen])) {
+            foreach ($map[$allergen] as $bad_word) {
+                $where_clauses[] = "r.ingredients NOT LIKE ?";
+                $params[] = "%$bad_word%";
+            }
+        }
+    }
+}
+
 if (count($where_clauses) > 0) {
     $sql .= " WHERE " . implode(' AND ', $where_clauses);
 }
 
-// Add the ORDER BY (sorting)
+// Sorting
 if ($sort_by === 'alpha') {
     $sql .= " ORDER BY r.recipe_name ASC";
 } else {
-    // Default to 'popular'
     $sql .= " ORDER BY r.rating DESC";
 }
-
-// Always good to limit our results
 $sql .= " LIMIT 50";
 
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
+$recipes = $stmt->fetchAll();
 
-// ===============================================
-// === PART 3: FETCH THE RECIPES
-// ===============================================
-try {
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params); // Pass in the params
-    $recipes = $stmt->fetchAll();
-    
-} catch (PDOException $e) {
-    die("Error: Could not fetch recipes. " . $e->getMessage());
+// Allergen Helper
+function getAllergens($text)
+{
+    $text = strtolower($text ?? '');
+    $found = [];
+    $keywords = [
+        'Dairy' => ['milk', 'cheese', 'butter', 'cream', 'yogurt'],
+        'Eggs' => ['egg', 'mayonnaise'],
+        'Peanuts' => ['peanut'],
+        'Tree Nuts' => ['almond', 'cashew', 'walnut'],
+        'Soy' => ['soy', 'tofu'],
+        'Wheat' => ['wheat', 'flour', 'bread', 'pasta']
+    ];
+    foreach ($keywords as $group => $words) {
+        foreach ($words as $w) {
+            if (preg_match("/\\b$w(s?)\\b/i", $text)) {
+                $found[] = $group;
+                break;
+            }
+        }
+    }
+    return array_unique($found);
 }
 ?>
 
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Recipe Browser</title>
     <link rel="stylesheet" href="style/global.css">
-    <link rel="stylesheet" href="style/forms.css">
     <style>
-        /* (All the styles from your original index/recipes page...) */
-        .app-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 1rem 2rem; background-color: #f8f8f8; border-bottom: 1px solid #ddd;
+        .filter-section {
+            background: var(--card-bg);
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 2rem;
         }
-        .profile-menu span { margin-right: 1rem; }
-        .button-logout {
-            text-decoration: none; background: #d9534f; color: white;
-            padding: 0.5rem 1rem; border-radius: 5px;
-        }
-        .nav-links {
-            flex: 1;
-            text-align: center;
-        }
-        .nav-links a { 
-            text-decoration: none; 
-            color: #007bff; 
-            margin: 0 1rem; 
-            font-weight: 500;
-        }
-        .nav-links a.active {
-            font-weight: 700;
-            border-bottom: 2px solid #007bff;
-        }
-        
-        /* NEW: Styles for the search/filter bar */
-        .recipe-controls {
-            padding: 1rem 2rem;
-            background: #fdfdfd;
-            border-bottom: 1px solid #eee;
+
+        .filter-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-        .recipe-controls form {
-            display: flex;
-            gap: 10px;
-        }
-        .recipe-controls input[type="text"] {
-            padding: 0.5rem;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            width: 300px;
-        }
-        .recipe-controls button {
-            padding: 0.5rem 1rem;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+            margin-bottom: 1rem;
         }
 
-        .favorite-link {
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
-        .favorite-link.add {
-            color: #007bff;
-        }
-        .favorite-link.add:hover {
-            opacity: 0.7;
-        }
-        .favorite-link.remove {
-            color: #ffc107; /* Gold color for "favorited" */
-        }
-        .favorite-link.remove:hover {
-            color: #e6a700;
-        }
-        .filter-links a {
-            text-decoration: none;
-            padding: 0.5rem;
-            margin-left: 0.5rem;
-            color: #007bff;
-        }
-        .filter-links a.active {
-            font-weight: 700;
-            border-bottom: 2px solid #007bff;
-        }
-
-        /* (Recipe grid styles are the same as before...) */
         .recipe-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            padding: 2rem;
+            gap: 25px;
+            padding: 0 2rem 4rem 2rem;
         }
+
         .recipe-card {
-            border: 1px solid #ddd; border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            overflow: hidden; display: flex; flex-direction: column; background: #fff;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s;
+            position: relative;
         }
-        .recipe-card-content { padding: 1rem; }
-        .recipe-card h3 { margin-top: 0; font-size: 1.25rem; color: #333; }
-        .recipe-card-info {
-            display: flex; justify-content: space-between;
-            font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;
+
+        .recipe-card:hover {
+            transform: translateY(-3px);
         }
-        .recipe-card-actions {
-            margin-top: 1rem; border-top: 1px solid #eee; padding-top: 1rem;
+
+        .user-badge {
+            background-color: #17a2b8;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: inline-block;
         }
-        .recipe-card a { text-decoration: none; color: #007bff; }
     </style>
 </head>
-<body>
+
+<body class="<?php echo ($is_dark) ? 'dark-mode' : ''; ?>">
 
     <header class="app-header">
         <h1>Kitchen Pantry</h1>
         <div class="nav-links">
             <a href="index.php">My Pantry</a>
             <a href="recipes.php" class="active">Recipe Browser</a>
-            <a href="my_favorites.php">My Favorites</a>
+            <a href="my_favorites.php">Favorites</a>
             <a href="what_can_i_make.php">What Can I Make?</a>
         </div>
         <div class="profile-menu">
-            <span>Welcome, <?php echo $first_name; ?>!</span>
+            <a href="add_recipe.php" class="btn-primary" style="width:auto; padding: 5px 15px; font-size: 0.9rem;">+ Add
+                Recipe</a>
+            <a href="settings.php">⚙️ Settings</a>
+            <span>Hi, <?php echo htmlspecialchars($first_name); ?></span>
             <a href="logout.php" class="button-logout">Log Out</a>
         </div>
     </header>
 
-    <div class="recipe-controls">
-        <form method="GET" action="recipes.php">
-            <input type="text" name="search" placeholder="Search recipes..." value="<?php echo $search_term; ?>">
-            <button type="submit">Search</button>
-            <input type="hidden" name="sort" value="<?php echo $sort_by; ?>">
+    <div class="filter-section">
+        <form method="GET">
+            <div class="filter-row">
+                <div style="display:flex; gap:10px; flex:1;">
+                    <input type="text" name="search" placeholder="Search recipes..." value="<?php echo $search_term; ?>"
+                        style="margin:0; max-width:300px;">
+                    <button type="submit" class="btn-primary" style="width:auto;">Search</button>
+                </div>
+                <div>
+                    Sort:
+                    <select name="sort" onchange="this.form.submit()"
+                        style="width:auto; display:inline-block; margin:0;">
+                        <option value="popular" <?php if ($sort_by == 'popular')
+                            echo 'selected'; ?>>Highest Rated</option>
+                        <option value="alpha" <?php if ($sort_by == 'alpha')
+                            echo 'selected'; ?>>A-Z</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap: 15px; flex-wrap:wrap;">
+                <label
+                    style="background:var(--bg-color); padding:5px 10px; border-radius:15px; border:1px solid var(--border-color); cursor:pointer;">
+                    <input type="checkbox" name="user_recipes_only" value="1" <?php echo $user_recipes_only ? 'checked' : ''; ?> onchange="this.form.submit()">
+                    👤 User Created Only
+                </label>
+                <span style="color:var(--text-muted);">| Exclude:</span>
+                <?php foreach (['Dairy', 'Eggs', 'Peanuts', 'Tree Nuts', 'Soy', 'Wheat'] as $a): ?>
+                    <label style="font-size:0.9rem; cursor:pointer;">
+                        <input type="checkbox" name="exclude[]" value="<?php echo $a; ?>" <?php echo in_array($a, $excluded_allergens) ? 'checked' : ''; ?>> <?php echo $a; ?>
+                    </label>
+                <?php endforeach; ?>
+                <button type="submit"
+                    style="background:none; border:none; color:var(--accent-color); cursor:pointer; text-decoration:underline;">Apply</button>
+            </div>
         </form>
-        <div class="filter-links">
-            <span>Sort by:</span>
-            <a href="recipes.php?sort=popular&search=<?php echo $search_term; ?>" 
-               class="<?php echo $sort_by === 'popular' ? 'active' : ''; ?>">
-               Popular
-            </a>
-            <a href="recipes.php?sort=alpha&search=<?php echo $search_term; ?>"
-               class="<?php echo $sort_by === 'alpha' ? 'active' : ''; ?>">
-               A-Z
-            </a>
-        </div>
     </div>
 
-    <main class="app-content">
-        <div class="recipe-grid">
-            
-            <?php foreach ($recipes as $recipe): ?>
-    
-                <div class="recipe-card">
-        
-                    <?php if (!empty($recipe['img_src'])): ?>
-                        <img src="<?php echo htmlspecialchars($recipe['img_src']); ?>" alt="<?php echo htmlspecialchars($recipe['recipe_name']); ?>" style="width:100%; height: 200px; object-fit: cover;">
-                    <?php else: ?>
-                        <div style="width:100%; height: 200px; background: #eee; display:flex; align-items:center; justify-content:center; color:#aaa;">No Image</div>
+    <div class="recipe-grid">
+        <?php foreach ($recipes as $recipe): ?>
+            <?php $allergens = getAllergens($recipe['ingredients']); ?>
+            <div class="recipe-card">
+                <?php if ($recipe['img_src']): ?>
+                    <img src="<?php echo htmlspecialchars($recipe['img_src']); ?>"
+                        style="width:100%; height: 200px; object-fit: cover;">
+                <?php else: ?>
+                    <div
+                        style="width:100%; height: 200px; background:var(--bg-color); display:flex; align-items:center; justify-content:center; color:var(--text-muted);">
+                        No Image</div>
+                <?php endif; ?>
+
+                <div style="padding: 1rem; flex: 1; display:flex; flex-direction:column;">
+                    <?php if (!empty($recipe['user_id'])): ?>
+                        <div><span class="user-badge">👤 User Recipe</span></div>
                     <?php endif; ?>
 
-                    <div class="recipe-card-content">
-                        <h3><?php echo htmlspecialchars($recipe['recipe_name']); ?></h3>
-                        <div class="recipe-card-info">
-                            </div>
-                        <div class="recipe-card-actions">
-                            <?php if ($recipe['is_favorite']): ?>
-                                <a href="remove_favorite.php?id=<?php echo $recipe['id']; ?>" class="favorite-link remove">
-                                     ★ Favorited
-                                </a>
-                            <?php else: ?>
-                                <a href="add_favorite.php?id=<?php echo $recipe['id']; ?>" class="favorite-link add">
-                                    ☆ Add to Favorites
-                                </a>
-                            <?php endif; ?>
-    
-                            <a href="view_recipe.php?id=<?php echo $recipe['id']; ?>" style="float:right;">View Recipe</a>
+                    <h3 style="margin:0 0 10px 0;"><?php echo htmlspecialchars($recipe['recipe_name']); ?></h3>
+
+                    <?php if (!empty($allergens)): ?>
+                        <div style="color: var(--danger-color); font-size: 0.8em; margin-bottom: 5px;">
+                            <strong>⚠️ Contains:</strong> <?php echo implode(', ', $allergens); ?>
                         </div>
+                    <?php endif; ?>
+
+                    <div
+                        style="margin-top:auto; padding-top:10px; border-top:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                        <?php if ($recipe['is_favorite']): ?>
+                            <a href="remove_favorite.php?id=<?php echo $recipe['id']; ?>" style="color:gold;">★ Saved</a>
+                        <?php else: ?>
+                            <a href="add_favorite.php?id=<?php echo $recipe['id']; ?>" style="color:var(--accent-color);">☆
+                                Save</a>
+                        <?php endif; ?>
+                        <a href="view_recipe.php?id=<?php echo $recipe['id']; ?>" class="btn-primary"
+                            style="width:auto; padding:5px 10px; font-size:0.8rem;">View</a>
                     </div>
                 </div>
-
-            <?php endforeach; ?>
-            
-            <?php if (empty($recipes)): ?>
-                <p style="padding-left: 2rem;">No recipes found. <?php if(!empty($search_term)) echo 'Try a different search?'; ?></p>
-            <?php endif; ?>
-
-        </div>
-    </main>
-
+            </div>
+        <?php endforeach; ?>
+    </div>
 </body>
+
 </html>
