@@ -48,7 +48,7 @@ $tables = [
             username VARCHAR(255) UNIQUE,
             email VARCHAR(255) UNIQUE,
             password VARCHAR(255),
-            dark_mode TINYINT DEFAULT 0
+            dark_mode TINYINT(1) DEFAULT 0
         )",
     'ingredients' => "
         CREATE TABLE ingredients (
@@ -112,15 +112,6 @@ $tables = [
             FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )",
-    'password_resets' => "
-        CREATE TABLE password_resets (
-            id INT(11) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            user_id INT(11) UNSIGNED NOT NULL,
-            token VARCHAR(64) NOT NULL,
-            expires_at DATETIME NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        )"
 ];
 
 foreach ($tables as $name => $sql) {
@@ -136,7 +127,8 @@ echo "✓ Schema setup complete.\n";
 // --- 3. IMPORT RECIPES ---
 echo "\n[3/6] Importing Recipes (recipes.csv)...\n";
 $csv_file = __DIR__ . '/recipes.csv';
-if (!file_exists($csv_file)) die("FATAL: recipes.csv not found.\n");
+if (!file_exists($csv_file))
+    die("FATAL: recipes.csv not found.\n");
 
 $handle = fopen($csv_file, 'r');
 $sql = "INSERT IGNORE INTO recipes (recipe_name, total_time, servings, ingredients, directions, rating, url, img_src) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -145,13 +137,20 @@ $stmt = $pdo->prepare($sql);
 $count = 0;
 $line = 0;
 while (($data = fgetcsv($handle, 2000, ',')) !== FALSE) {
-    if ($line++ == 0) continue; // Skip header
+    if ($line++ == 0)
+        continue; // Skip header
 
     // Map columns based on your CSV structure
     // 1:name, 4:time, 5:servings, 7:ingredients, 8:directions, 9:rating, 10:url, 14:img_src
     $stmt->execute([
-        $data[1] ?? '', $data[4] ?? '', $data[5] ?? '', $data[7] ?? '', 
-        $data[8] ?? '', $data[9] ?? 0,  $data[10] ?? '', $data[14] ?? ''
+        $data[1] ?? '',
+        $data[4] ?? '',
+        $data[5] ?? '',
+        $data[7] ?? '',
+        $data[8] ?? '',
+        $data[9] ?? 0,
+        $data[10] ?? '',
+        $data[14] ?? ''
     ]);
     $count++;
 }
@@ -163,36 +162,37 @@ echo "✓ Imported $count recipes.\n";
 echo "\n[4/6] Importing Ingredients (ingredients.tsv)...\n";
 echo "      (This involves 1GB of data. Please wait...)\n";
 $tsv_file = __DIR__ . '/ingredients.tsv';
-// Note: It's okay if this file doesn't exist during testing, 
-// but needed for the full pantry feature to work perfectly.
-if (file_exists($tsv_file)) {
-    $handle = fopen($tsv_file, 'r');
-    $sql = "INSERT INTO ingredients (product_name, generic_name, brands, image_url, code) VALUES (?, ?, ?, ?, ?)";
-    $stmt = $pdo->prepare($sql);
+if (!file_exists($tsv_file))
+    die("FATAL: ingredients.tsv not found.\n");
 
-    $pdo->beginTransaction();
-    $count = 0;
-    $line = 0;
-    while (($data = fgetcsv($handle, 0, "\t")) !== FALSE) {
-        if ($line++ == 0) continue; // Skip header
+$handle = fopen($tsv_file, 'r');
+$sql = "INSERT INTO ingredients (product_name, generic_name, brands, image_url, code) VALUES (?, ?, ?, ?, ?)";
+$stmt = $pdo->prepare($sql);
 
-        $code = $data[0] ?? null;
-        $name = $data[7] ?? null;
-        if (empty($name)) continue; // Skip empty names
+$pdo->beginTransaction();
+$count = 0;
+$line = 0;
+while (($data = fgetcsv($handle, 0, "\t")) !== FALSE) {
+    if ($line++ == 0)
+        continue; // Skip header
 
-        try {
-            $stmt->execute([$name, $data[8]??'', $data[12]??'', $data[69]??'', $code]);
-            $count++;
-        } catch (Exception $e) { /* Ignore duplicates */ }
+    $code = $data[0] ?? null;
+    $name = $data[7] ?? null;
+    if (empty($name))
+        continue; // Skip empty names
 
-        if ($count % 5000 == 0) echo "      ... imported $count ingredients...\r";
+    try {
+        $stmt->execute([$name, $data[8] ?? '', $data[12] ?? '', $data[69] ?? '', $code]);
+        $count++;
+    } catch (Exception $e) { /* Ignore duplicates */
     }
-    $pdo->commit();
-    fclose($handle);
-    echo "\n✓ Imported $count ingredients.\n";
-} else {
-    echo "      ! ingredients.tsv not found. Skipping ingredient import.\n";
+
+    if ($count % 5000 == 0)
+        echo "      ... imported $count ingredients...\r";
 }
+$pdo->commit();
+fclose($handle);
+echo "\n✓ Imported $count ingredients.\n";
 
 
 // --- 5. PARSE RECIPES (ROSETTA STONE) ---
@@ -203,37 +203,35 @@ $map = [];
 $stmt = $pdo->query("SELECT id, product_name FROM ingredients");
 while ($row = $stmt->fetch()) {
     $n = strtolower($row['product_name']);
-    if (strlen($n) > 2) $map[$n] = $row['id'];
+    if (strlen($n) > 2)
+        $map[$n] = $row['id'];
 }
 
-if (count($map) > 0) {
-    echo "      Scanning recipes against " . count($map) . " ingredients...\n";
-    $recipes = $pdo->query("SELECT id, ingredients FROM recipes")->fetchAll();
-    $sql = "INSERT IGNORE INTO recipe_ingredients_parsed (recipe_id, ingredient_id) VALUES (?, ?)";
-    $stmt = $pdo->prepare($sql);
+echo "      Scanning recipes against " . count($map) . " ingredients...\n";
+$recipes = $pdo->query("SELECT id, ingredients FROM recipes")->fetchAll();
+$sql = "INSERT IGNORE INTO recipe_ingredients_parsed (recipe_id, ingredient_id) VALUES (?, ?)";
+$stmt = $pdo->prepare($sql);
 
-    $pdo->beginTransaction();
-    $links = 0;
-    foreach ($recipes as $r) {
-        $text = strtolower($r['ingredients']);
-        foreach ($map as $name => $iid) {
-            if (strpos($text, $name) !== false) {
-                $stmt->execute([$r['id'], $iid]);
-                $links++;
-            }
+$pdo->beginTransaction();
+$links = 0;
+foreach ($recipes as $r) {
+    $text = strtolower($r['ingredients']);
+    foreach ($map as $name => $iid) {
+        if (strpos($text, $name) !== false) {
+            $stmt->execute([$r['id'], $iid]);
+            $links++;
         }
     }
-    $pdo->commit();
-    echo "✓ Created $links links between recipes and ingredients.\n";
-} else {
-    echo "      ! No ingredients found to map. Skipping parsing.\n";
 }
+$pdo->commit();
+echo "✓ Created $links links between recipes and ingredients.\n";
 
 
 // --- 6. DOWNLOAD IMAGES ---
 echo "\n[6/6] Downloading Recipe Images...\n";
 $img_dir = __DIR__ . '/public/images/recipes/';
-if (!is_dir($img_dir)) mkdir($img_dir, 0777, true);
+if (!is_dir($img_dir))
+    mkdir($img_dir, 0777, true);
 
 $recipes = $pdo->query("SELECT id, img_src FROM recipes WHERE img_src LIKE 'http%'")->fetchAll();
 $stmt = $pdo->prepare("UPDATE recipes SET img_src = ? WHERE id = ?");
@@ -246,27 +244,33 @@ foreach ($recipes as $r) {
     $id = $r['id'];
     $local_name = $id . '.jpg';
     $local_path = $img_dir . $local_name;
-    // Note: This path assumes your project is named 'kitchenpantry'. 
-    // If you rename the folder, you might need to update this line in the DB later.
     $db_path = '/kitchenpantry/public/images/recipes/' . $local_name;
 
-    // Only download if we don't have it yet (saves time on re-runs)
-    if (!file_exists($local_path)) {
-        $data = @file_get_contents($url, false, $context);
-        if ($data) {
-            file_put_contents($local_path, $data);
-            $stmt->execute([$db_path, $id]);
-            $dl_count++;
-            echo "      Saved image for recipe #$id\r";
-        }
-    } else {
-        // Even if we have the file, ensure DB uses local path
+    $data = @file_get_contents($url, false, $context);
+    if ($data) {
+        file_put_contents($local_path, $data);
         $stmt->execute([$db_path, $id]);
+        $dl_count++;
+        echo "      Saved image for recipe #$id\r";
     }
 }
-echo "\n✓ Downloaded/Verified $dl_count images.\n";
+echo "\n✓ Downloaded $dl_count images.\n";
 
 echo "\n=============================================\n";
 echo "   SETUP COMPLETE!\n";
 echo "=============================================\n";
 ?>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
